@@ -1,4 +1,4 @@
-name: EKS Cluster Deployments
+name: EKS Cluster Deployment
 
 on:
   push:
