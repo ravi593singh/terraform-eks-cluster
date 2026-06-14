@@ -1,6 +1,6 @@
 name: EKS Cluster Deployments
 
-on:
+on: [push]
   workflow_dispatch:
     inputs:
       action:
