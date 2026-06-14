@@ -24,10 +24,15 @@ permissions:
   contents: read
 
 jobs:
-  validate:
+   validate:
     name: Validate Terraform
     runs-on: self-hosted
     if: github.event_name == 'push' || inputs.action == 'deploy'
+    # Add dummy credentials to prevent the provider from stalling
+    env:
+      AWS_ACCESS_KEY_ID: mock-key-id
+      AWS_SECRET_ACCESS_KEY: mock-secret-key
+      AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -38,6 +43,17 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+        working-directory: ${{ env.TF_WORKING_DIR }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ env.TF_WORKING_DIR }}
       
 
       - name: Terraform Init
