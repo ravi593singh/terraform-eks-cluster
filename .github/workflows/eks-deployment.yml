@@ -20,7 +20,7 @@ env:
 jobs:
   validate:
     name: Validate Terraform
-    runs-on: ubuntu-latest
+    runs-on: ubuntu
     if: github.event.inputs.action == 'deploy'
     steps:
       - name: Checkout code
