@@ -1,4 +1,4 @@
-name: EKS Cluster Deployment
+name: EKS Cluster Deployments
 
 on:
   workflow_dispatch:
