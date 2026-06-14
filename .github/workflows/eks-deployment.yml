@@ -20,18 +20,17 @@ env:
   TF_WORKING_DIR: ./
 
 permissions:
-  id-token: write
+  id-token: write # Required for secure AWS OIDC role assumption
   contents: read
 
 jobs:
-   validate:
+  validate:
     name: Validate Terraform
     runs-on: self-hosted
     if: github.event_name == 'push' || inputs.action == 'deploy'
-    # Add dummy credentials to prevent the provider from stalling
     env:
-      AWS_ACCESS_KEY_ID: mock-key-id
-      AWS_SECRET_ACCESS_KEY: mock-secret-key
+      AWS_ACCESS_KEY_ID: mock-key-id          # Mock credentials prevent the AWS provider
+      AWS_SECRET_ACCESS_KEY: mock-secret-key  # from hanging on local IMDS metadata timeouts
       AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
     steps:
       - name: Checkout code
@@ -41,20 +40,11 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: ${{ env.TF_VERSION }}
-          terraform_wrapper: false
+          terraform_wrapper: false # Disabled to fix missing 'node' shebang errors on self-hosted runners
 
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
         working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Init
-        run: terraform init -backend=false
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ${{ env.TF_WORKING_DIR }}
-      
 
       - name: Terraform Init
         run: terraform init -backend=false
