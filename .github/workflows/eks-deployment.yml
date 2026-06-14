@@ -20,7 +20,7 @@ env:
 jobs:
   validate:
     name: Validate Terraform
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     if: github.event.inputs.action == 'deploy'
     steps:
       - name: Checkout code
@@ -45,7 +45,7 @@ jobs:
 
   plan:
     name: Terraform Plan
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: validate
     if: github.event.inputs.action == 'deploy'
     permissions:
@@ -84,7 +84,7 @@ jobs:
 
   apply:
     name: Terraform Apply
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     needs: plan
     if: github.event.inputs.action == 'deploy'
     permissions:
@@ -123,7 +123,7 @@ jobs:
 
   destroy:
     name: Terraform Destroy
-    runs-on: ubuntu-22.04
+    runs-on: self-hosted
     if: github.event.inputs.action == 'destroy'
     permissions:
       contents: read
