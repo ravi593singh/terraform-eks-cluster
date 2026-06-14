@@ -65,7 +65,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUSH }}
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -154,6 +154,7 @@ jobs:
         working-directory: ${{ env.TF_WORKING_DIR }}
 
       - name: Terraform Destroy
-        run: terraform destroy -auto-approve working-directory: ${{ env.TF_WORKING_DIR }}
+        run: terraform destroy -auto-approve
+        working-directory: ${{ env.TF_WORKING_DIR }}
         env:
           TF_LOG: DEBUG
