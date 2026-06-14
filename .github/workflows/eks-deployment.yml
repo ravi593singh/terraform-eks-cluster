@@ -20,15 +20,14 @@ env:
   TF_WORKING_DIR: ./
 
 permissions:
-  id-token: write
+  id-token: write # Required for AWS OIDC authentication
   contents: read
 
 jobs:
   validate:
     name: Validate Terraform
     runs-on: self-hosted
-    # Safe top-level inputs context checks both push and manual triggers
-    if: github.event_name == 'push' || inputs.action == 'deploy'
+    if: github.event.inputs.action == 'deploy' || github.event_name == 'push'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -53,7 +52,7 @@ jobs:
     name: Terraform Plan
     runs-on: self-hosted
     needs: validate
-    if: github.event_name == 'push' || inputs.action == 'deploy'
+    if: github.event.inputs.action == 'deploy' || github.event_name == 'push'
     permissions:
       contents: read
       id-token: write
@@ -65,7 +64,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }} # Recommended security upgrade
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
@@ -92,7 +91,7 @@ jobs:
     name: Terraform Apply
     runs-on: self-hosted
     needs: plan
-    if: github.event_name == 'push' || inputs.action == 'deploy'
+    if: github.event.inputs.action == 'deploy' || github.event_name == 'push'
     permissions:
       contents: read
       id-token: write
@@ -130,8 +129,7 @@ jobs:
   destroy:
     name: Terraform Destroy
     runs-on: self-hosted
-    # Only run if explicitly triggered via workflow_dispatch and destroy is selected
-    if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
+    if: github.event.inputs.action == 'destroy'
     permissions:
       contents: read
       id-token: write
