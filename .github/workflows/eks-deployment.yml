@@ -34,12 +34,11 @@ jobs:
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }} # Automatically pulls credentials from the EC2 IAM Instance Role
+          aws-region: ${{ env.AWS_REGION }} # Uses your EC2 instance's IAM Role
 
-      - name: Init, Validate, and Apply
+      - name: Init and Apply
         run: |
           terraform init
-          terraform validate
           terraform apply -auto-approve
 
   destroy:
@@ -59,7 +58,7 @@ jobs:
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }} # Automatically pulls credentials from the EC2 IAM Instance Role
+          aws-region: ${{ env.AWS_REGION }} # Uses your EC2 instance's IAM Role
 
       - name: Destroy
         run: |
