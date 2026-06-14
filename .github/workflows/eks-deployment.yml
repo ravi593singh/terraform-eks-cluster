@@ -2,10 +2,6 @@ name: EKS Cluster Deployment
 
 on:
 
-    paths:
-      - '**/'
-      - '.github/workflows/eks-deployment.yml'
-
 
   workflow_dispatch:
     inputs:
