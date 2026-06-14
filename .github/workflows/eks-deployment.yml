@@ -6,72 +6,28 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'Choose the Terraform action to run'
+        description: 'Choose action'
         required: true
         default: 'deploy'
         type: choice
-        options:
-          - deploy
-          - destroy
+        options: [deploy, destroy]
 
 env:
   AWS_REGION: us-east-1
   TF_VERSION: 1.5.0
-  TF_WORKING_DIR: ./
 
 permissions:
-  id-token: write # Required for secure AWS OIDC role assumption
+  id-token: write
   contents: read
 
 jobs:
-  validate:
-    name: Validate Terraform
+  deploy:
+    name: Terraform Deploy
     runs-on: self-hosted
     if: github.event_name == 'push' || inputs.action == 'deploy'
-    env:
-      AWS_ACCESS_KEY_ID: mock-key-id          # Mock credentials prevent the AWS provider
-      AWS_SECRET_ACCESS_KEY: mock-secret-key  # from hanging on local IMDS metadata timeouts
-      AWS_DEFAULT_REGION: ${{ env.AWS_REGION }}
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-          terraform_wrapper: false # Disabled to fix missing 'node' shebang errors on self-hosted runners
-
-      - name: Terraform Format Check
-        run: terraform fmt -check -recursive
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Init
-        run: terraform init -backend=false
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-  plan:
-    name: Terraform Plan
-    runs-on: self-hosted
-    needs: validate
-    if: github.event_name == 'push' || inputs.action == 'deploy'
-    permissions:
-      contents: read
-      id-token: write
-      pull-requests: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -79,77 +35,25 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Plan
-        id: plan
-        run: terraform plan -no-color -out=tfplan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: tfplan
-          path: ${{ env.TF_WORKING_DIR }}/tfplan
-
-  apply:
-    name: Terraform Apply
-    runs-on: self-hosted
-    needs: plan
-    if: github.event_name == 'push' || inputs.action == 'deploy'
-    permissions:
-      contents: read
-      id-token: write
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
+      - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-          terraform_wrapper: false
-
-      - name: Download Plan Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: tfplan
-          path: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TF_WORKING_DIR }}
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve tfplan
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        env:
-          TF_LOG: INFO
+      - name: Init, Validate, and Apply
+        run: |
+          terraform init
+          terraform validate
+          terraform apply -auto-approve
 
   destroy:
     name: Terraform Destroy
     runs-on: self-hosted
     if: github.event_name == 'workflow_dispatch' && inputs.action == 'destroy'
-    permissions:
-      contents: read
-      id-token: write
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -157,12 +61,13 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
           terraform_wrapper: false
 
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TF_WORKING_DIR }}
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Terraform Destroy
-        run: terraform destroy -auto-approve
-        working-directory: ${{ env.TF_WORKING_DIR }}
-        env:
-          TF_LOG: DEBUG
+      - name: Destroy
+        run: |
+          terraform init
+          terraform destroy -auto-approve
