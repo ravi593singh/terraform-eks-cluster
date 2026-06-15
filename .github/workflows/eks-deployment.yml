@@ -34,12 +34,21 @@ jobs:
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }} # Uses your EC2 instance's IAM Role
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Init and Apply
         run: |
           terraform init
-          terraform apply -auto-approve
+          terraform apply -auto-approve \
+            -var="region=${{ env.AWS_REGION }}" \
+            -var="cluster_name=eks-cluster" \
+            -var="cluster_version=1.28" \
+            -var="vpc_cidr=10.0.0.0/16" \
+            -var="node_instance_type=t3.medium" \
+            -var="desired_size=2" \
+            -var="min_size=1" \
+            -var="max_size=4" \
+            -var="environment=dev"
 
   destroy:
     name: Terraform Destroy
@@ -58,9 +67,18 @@ jobs:
       - name: Configure AWS
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-region: ${{ env.AWS_REGION }} # Uses your EC2 instance's IAM Role
+          aws-region: ${{ env.AWS_REGION }}
 
       - name: Destroy
         run: |
           terraform init
-          terraform destroy -auto-approve
+          terraform destroy -auto-approve \
+            -var="region=${{ env.AWS_REGION }}" \
+            -var="cluster_name=eks-cluster" \
+            -var="cluster_version=1.28" \
+            -var="vpc_cidr=10.0.0.0/16" \
+            -var="node_instance_type=t3.medium" \
+            -var="desired_size=2" \
+            -var="min_size=1" \
+            -var="max_size=4" \
+            -var="environment=dev"
